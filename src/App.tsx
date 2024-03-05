@@ -1,13 +1,21 @@
 import {
+  MeshWobbleMaterial,
+  OrbitControls,
+  useHelper,
+} from "@react-three/drei";
+import {
   Canvas,
   Vector3,
   useFrame,
 } from "@react-three/fiber";
+import { useControls } from "leva";
 import { useRef, useState } from "react";
-import { Mesh } from "three";
+import {
+  DirectionalLight,
+  DirectionalLightHelper,
+  Mesh,
+} from "three";
 import "./App.css";
-
-//51:12
 
 interface CubeProps {
   position: Vector3;
@@ -37,7 +45,8 @@ const Torus = ({ position, args, color }: TorusProps) => {
   return (
     <mesh position={position}>
       <torusGeometry args={args} />
-      <meshStandardMaterial color={color} />
+      {/* <meshStandardMaterial color={color} /> */}
+      <MeshWobbleMaterial factor={1.5} speed={0.5} />
     </mesh>
   );
 };
@@ -45,19 +54,24 @@ const Torus = ({ position, args, color }: TorusProps) => {
 const TorusKnot = ({
   position,
   args,
-  color,
-}: TorusKnotProps) => {
+}: // color,
+TorusKnotProps) => {
   const ref = useRef<Mesh>(null!);
 
-  useFrame((state, delta) => {
-    ref.current.rotation.x += delta;
-    ref.current.rotation.y += delta;
-    ref.current.rotation.z += delta;
+  const { color, radius } = useControls({
+    color: "lightblue",
+    radius: { value: 5, min: 1, max: 10, step: 0.5 },
   });
+
+  // useFrame((state, delta) => {
+  // ref.current.rotation.x += delta;
+  // ref.current.rotation.y += delta;
+  // ref.current.rotation.z += delta;
+  // });
 
   return (
     <mesh position={position} ref={ref}>
-      <torusKnotGeometry args={args} />
+      <torusKnotGeometry args={[radius, ...args]} />
       <meshStandardMaterial color={color} />
     </mesh>
   );
@@ -104,12 +118,35 @@ const Cube = ({ position, size, color }: CubeProps) => {
   );
 };
 
-function App() {
+const Scene = () => {
+  const diresctionalLightRef = useRef<DirectionalLight>(
+    null!
+  );
+
+  const { lightColor, lightIntensity } = useControls({
+    lightColor: "white",
+    lightIntensity: {
+      value: 0.5,
+      min: 0,
+      max: 5,
+      step: 0.1,
+    },
+  });
+
+  useHelper(
+    diresctionalLightRef,
+    DirectionalLightHelper,
+    0.5,
+    "white"
+  );
+
   return (
-    <Canvas>
+    <>
       <directionalLight
         position={[0, 0, 1]}
-        intensity={1.5}
+        intensity={lightIntensity}
+        ref={diresctionalLightRef}
+        color={lightColor}
       />
       <ambientLight intensity={0.5} />
 
@@ -151,8 +188,19 @@ function App() {
         args={[0.5, 0.1, 1000, 50]}
         color={"hotpink"}
       />
+      <OrbitControls enableZoom={false} />
+    </>
+  );
+};
+
+function App() {
+  return (
+    <Canvas>
+      <Scene />
     </Canvas>
   );
 }
 
 export default App;
+
+//Technologies used: React, React Three Fiber, drei, Leva.
